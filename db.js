@@ -160,7 +160,7 @@ async function fetch_train() {
 }
 
 async function addFace(personId, faceUrl) {
-  fetch_addFace(personId, faceUrl);
+  fetch_addFace(personId, faceUrl, process.env.PERSONGID);
   fetch_train();
 }
 
@@ -273,7 +273,10 @@ async function getNumPlayers(gameID) {
     if (err) {
       throw err;
     } else {
-      return doc.players.length;
+      if (doc.players) {
+        return doc.players.length;
+      }
+      return 0;
     }
   });
 }
@@ -312,7 +315,7 @@ async function removePlayerFromGame(gameId, appleId) {
 }
 
 async function getLocs(gameId) {
-  return await (await Game.findOne({id: gameId})).populate("players", (err, doc) => {
+  return await Game.findOne({id: gameId}).populate("players", (err, doc) => {
     if (err) throw err;
     var arr = doc.players;
     var result = [];

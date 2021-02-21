@@ -45,4 +45,41 @@ html
         label
           input(type='submit' value='Create User')
 
+    form(action='/api/shoot' method='post' enctype='multipart/form-data')
+        div.fileInput
+          label.fileInput
+            span AppleId
+            input(type='text' name='appleId' id='appleId')
+          label.fileInput
+            span lat
+            input(type='text' name='lat' id='lat')
+          label.fileInput
+            span lat
+            input(type='text' name='long' id='long')
+          label.fileInput
+            span gameId
+            input(type='text' name='gameId' id='gameId')
+          label.fileInput
+            span Select File
+            input(type='file' name='img' id='img')
+        label
+          input(type='submit' value='Shoot User')
+
+    form(action='/api/loc' method='post' enctype='multipart/form-data')
+        div.fileInput
+          label.fileInput
+            span AppleId
+            input(type='text' name='appleId' id='appleId')
+          label.fileInput
+            span lat
+            input(type='text' name='lat' id='lat')
+          label.fileInput
+            span long
+            input(type='text' name='long' id='long')
+          label.fileInput
+            span gameId
+            input(type='text' name='gameId' id='gameId')
+        label
+          input(type='submit' value='Loc User')
+
 
