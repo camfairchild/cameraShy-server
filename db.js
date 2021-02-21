@@ -354,7 +354,7 @@ async function removeGame(gameId) {
 }
 
 function updateLoc(appleId, loc) {
-  User.updateOne({id: appleId}, {lastCoords: loc}, {upsert: true});
+  User.updateOne({id: appleId}, {lastCoords: loc});
 };
 
 module.exports = {
