@@ -87,7 +87,7 @@ router.route('/shoot')
 
       var shooter = await db.getPlayerByAppleId(appleId);
       var victim = await checkShot(gameId, imgUrl, loc);
-      if (victim) {
+      if (victim !== null) {
         db.removePlayerFromGame(gameId, appleId);
         res.status(200).json({
           status: 1,
@@ -217,9 +217,10 @@ router.route('/join')
 
 async function checkShot(gameId, imgUrl, loc) {
   var personId = await db.identifyFace(imgUrl);
+  console.log(personId);
   if (personId) {
     var person = await db.getPlayerByPersonId(personId);
-    // TODO
+    console.log(person);
     if (db.getNumPlayers(gameId) == 1) {
       endGame(gameId);
     }

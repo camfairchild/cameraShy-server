@@ -108,7 +108,7 @@ async function createPerson(name_, userdata, faceUrl) {
 
 async function fetch_addFace(personId, faceUrl, personGroupId) {
   let endpoint = process.env["AZURE_ENDPOINT"] +
-    "/face/v1.0/persongroups/" + personGroupId + "/persons/" +
+    "face/v1.0/persongroups/" + personGroupId + "/persons/" +
     personId + "/persistedFaces";
 
   return await axios({
@@ -250,7 +250,7 @@ async function createUser(name_, apple_id, imageUrl, osId) {
     osId: osId,
     personId: personId,
     name: name_,
-    lastCoords: null,
+    lastCoords: {lat: null, long: null},
     imageUrl: imageUrl
   };
   User.create(user_obj, (err, doc) => {
@@ -354,7 +354,7 @@ async function removeGame(gameId) {
 }
 
 function updateLoc(appleId, loc) {
-  User.updateOne({id: appleId}, {lastCoords: loc});
+  User.updateOne({id: appleId}, {lastCoords: loc}, {upsert: true});
 };
 
 module.exports = {
