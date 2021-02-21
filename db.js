@@ -354,7 +354,11 @@ async function removeGame(gameId) {
 }
 
 function updateLoc(appleId, loc) {
-  User.updateOne({id: appleId}, {lastCoords: loc});
+  console.log(loc);
+  User.findOne({id: appleId}, (err, doc) => {
+    doc.lastCoords = loc;
+    doc.save();
+  });
 };
 
 module.exports = {
