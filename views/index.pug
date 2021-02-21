@@ -1,0 +1,48 @@
+doctype html
+html
+  head
+    title Camera Shy | UofTHacks VIII
+    link(href='stylesheets/style.css' type='text/css' rel='stylesheet')
+  body
+    h1 Camera Shy
+    form(action='/api/test_faceid' method='post' enctype='multipart/form-data')
+        div.fileInput
+          label.fileInput
+            span Select File
+            input(type='file' name='file' id='inputFile')
+        label
+          input(type='submit' value='Upload Face')
+    
+    form(action='/api/test_notif' method='post')
+        div.fileInput
+          label.fileInput
+            span osID
+            input(type='text' name='osId' id='osId')
+          label.fileInput
+            span header
+            input(type='text' name='header' id='header')
+          label.fileInput
+            span msg
+            input(type='text' name='msg' id='msg')
+            
+        label
+          input(type='submit' value='Make Req')
+
+    form(action='/api/createUser' method='post' enctype='multipart/form-data')
+        div.fileInput
+          label.fileInput
+            span name
+            input(type='text' name='name' id='name')
+          label.fileInput
+            span AppleId
+            input(type='text' name='id' id='id')
+          label.fileInput
+            span osId
+            input(type='osId' name='osId' id='osId')
+          label.fileInput
+            span Select File
+            input(type='file' name='img' id='img')
+        label
+          input(type='submit' value='Create User')
+
+

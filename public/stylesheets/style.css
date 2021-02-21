@@ -1,0 +1,17 @@
+.fileInput {
+    font-weight:bold;
+  }
+  
+  input {
+    margin: 5px;
+    display: inline-block;
+  }
+  
+  body {
+    margin: auto;
+    text-align: center;
+  }
+  
+  form {
+    margin: 10px;
+  }
