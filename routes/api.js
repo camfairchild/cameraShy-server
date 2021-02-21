@@ -323,7 +323,8 @@ router.route("/test_faceid")
     var file = req.file;    
     var imgUrl = process.env.UPLOAD + file.filename;
     console.log(imgUrl);
-    //var user = await db.createUser("test", "test", imgUrl, "test");
+    //await db.createUser("test", "test", imgUrl, "test");
+    //await new Promise(r => setTimeout(r, 2000));
     id = await db.identifyFace(imgUrl);
     console.log(id);
     res.send(id);

@@ -15,6 +15,7 @@ async function identifyFace(imageUrl) {
     params: {
       detectionModel: "detection_02", // Works with masks
       returnFaceId: true,
+      recognitionModel: "recognition_03"
     },
     data: {
       url: imageUrl,
@@ -53,7 +54,7 @@ async function fetch_identify(faceId, personGroupId) {
       console.log("Status text: " + response.status);
       console.log("Status text: " + response.statusText);
       console.log();
-      console.log(response.data);
+      console.log(response.data.error);
       return response.data[0].candidates[0].personId;
     })
     .catch(function (error) {
@@ -114,7 +115,8 @@ async function fetch_addFace(personId, faceUrl, personGroupId) {
     method: "post",
     url: endpoint,
     params: {
-      detectionModel: "detection_02"
+      detectionModel: "detection_02",
+      recognitionModel: "recognition_03"
     },
     data: {
       url: faceUrl
