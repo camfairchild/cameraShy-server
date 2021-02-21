@@ -42,8 +42,7 @@ async function fetch_identify(faceId, personGroupId) {
     url: endpoint,
     data: {
       faceIds: [faceId],
-      personGroupId: personGroupId,
-      maxNumOfCandidatesReturned: 1
+      personGroupId: personGroupId
     },
     headers: {
       "Content-Type": 'application/json',
@@ -102,7 +101,7 @@ async function createPerson(name_, userdata, faceUrl) {
   var personGroupId = process.env.PERSONGID;
   var personId = await fetch_createPerson(name_, userdata, personGroupId);
   await fetch_addFace(personId, faceUrl, personGroupId);
-  fetch_train();
+  await fetch_train();
   return personId;
 };
 
@@ -311,7 +310,7 @@ async function removePlayerFromGame(gameId, appleId) {
 }
 
 async function getLocs(gameId) {
-  return await Game.findOne({id: gameId}, (err, doc) => {
+  return await (await Game.findOne({id: gameId})).populate("players", (err, doc) => {
     if (err) throw err;
     var arr = doc.players;
     var result = [];
@@ -370,5 +369,6 @@ module.exports = {
   joinGame,
   gameExists,
   getGame,
-  removeGame
+  removeGame,
+  fetch_train
 };

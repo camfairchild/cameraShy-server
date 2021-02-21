@@ -6,6 +6,7 @@ var express = require("express");
 var routes = require("./routes/routes");
 var express = require("express");
 var path = require("path");
+
 var mongoose = require("mongoose");
 mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true});
 
@@ -23,6 +24,7 @@ app.use("/", indexRouter);
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
+  
   routes(app, db);
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {

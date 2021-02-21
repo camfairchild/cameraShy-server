@@ -5,7 +5,6 @@ var db = require("../db");
 var path = require('path')
 require('dotenv').config();
 const fs = require('fs');
-
 const axios = require("axios").default;
 
 var storage = multer.diskStorage({
@@ -15,7 +14,8 @@ var storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname)) //Appending extension
   }
-})
+});
+
 
 var upload = multer({ storage: storage });
 
@@ -85,17 +85,19 @@ router.route('/shoot')
       var loc = {lat: req.body.lat, long: req.body.long};
       var gameId = req.body.gameId;
 
-      var shooter = db.getPlayerByAppleId(appleId);
-      var victim = checkShot(gameId, imgUrl, loc);
+      var shooter = await db.getPlayerByAppleId(appleId);
+      var victim = await checkShot(gameId, imgUrl, loc);
       if (victim) {
         db.removePlayerFromGame(gameId, appleId);
-        res.send({
+        res.status(200).json({
           status: 1,
           message: "You eliminated " + victim.name
             + " from the game!"
         });
         var game = db.getGame(gameId);
         var numPlayers = game.players.length;
+        //io.emit("player died", {numPlayers: numPlayers,
+        //   shooter: shooter, victim: victim});
         notifyGame(game, victim.name + " was eliminated!",
           numPlayers + " players remain...",
          {numPlayers: numPlayers});
@@ -103,7 +105,7 @@ router.route('/shoot')
          "You were shot by " + shooter.name,
           {numPlayers: numPlayers});
       } else {
-        res.send({ status: 0, message: "You missed! No player was found." });
+        res.json({ status: 0, message: "You missed! No player was found." });
       }
     });
 
@@ -156,12 +158,14 @@ router.route("/gallery")
 });
 
 router.route('/loc')
-  .post((req, res) => {
+  .post(async (req, res) => {
     var appleId = req.body.id;
-    var loc = req.body.loc;
+    var loc = {lat: req.body.lat,
+              long: req.body.long};
     var gameId = req.body.gameId;
     db.updateLoc(appleId, loc);
-    var arr = db.getLocs(gameId);
+    var arr = await db.getLocs(gameId);
+    console.log(arr);
     res.json(arr);
 });
 
@@ -196,7 +200,7 @@ router.route('/join')
     if (await db.gameExists(gameId)) {
       db.joinGame(gameId, appleId)
       .then((game) => {
-      console.log(game);
+      console.log("THIS" + game);
       var num = game.players.length;
       res.status(200).json({game: game, numPlayers: num});
       }
@@ -211,10 +215,10 @@ router.route('/join')
     }
 });
 
-function checkShot(gameId, imgUrl, loc) {
-  var personId = db.identifyFace(imgUrl);
+async function checkShot(gameId, imgUrl, loc) {
+  var personId = await db.identifyFace(imgUrl);
   if (personId) {
-    var person = db.getPlayerByPersonId(personId);
+    var person = await db.getPlayerByPersonId(personId);
     // TODO
     if (db.getNumPlayers(gameId) == 1) {
       endGame(gameId);
@@ -231,6 +235,7 @@ async function endGame(gameId) {
   var game = await db.getGame(gameId);
   if (game) {
     var numPlayers = game.players.length;
+    io.emit("game over", {game_end: 1, numPlayers: numPlayers});
     notifyGame(game, "Game Over!", 
     "The game has ended. " + numPlayers + " players left!",
      {game_end: 1, numPlayers: numPlayers});
@@ -318,6 +323,7 @@ router.route("/test_faceid")
     var file = req.file;    
     var imgUrl = process.env.UPLOAD + file.filename;
     console.log(imgUrl);
+    //var user = await db.createUser("test", "test", imgUrl, "test");
     id = await db.identifyFace(imgUrl);
     console.log(id);
     res.send(id);
@@ -337,26 +343,20 @@ router.route("/test_notif")
   });
 
 router.route("/init").get((req, res) => {
+  console.log("started");
   db.init();
+  res.end();
 });
 
 router.route("/clear").get((req, res) => {
   db.clear();
 });
 
-router.route("/start")
-  .put(async (req) => {
-    var gameId = req.body.gameId;
-    var time = req.body.time;
-    var game = await db.getGame(gameId);
-    if (game) {
-      startGame(game, time);
-    }
-  });
-
-async function startGame(game, time) {
-  notifyGame(game, "Game Started!", "The game has begun...", {startTime: time});
-}
+router.put("/start", (req, res) => {
+  var gameId = req.body.gameId;
+  var time = req.body.time;
+  //io.emit('start game', {gameId: gameId, startTime: time});
+});
 
 async function notifyGame(game, title, msg, data) {
   for (i = 0; i < game.players.length; i++) {
