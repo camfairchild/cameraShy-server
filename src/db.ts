@@ -8,6 +8,18 @@ import axios from "axios";
 
 const subscriptionKey = process.env["AZURE_KEY"];
 
+export function updateUserSocketId(appleId: string, socketId: string) {
+  User.findOne({id: appleId}, (err, doc) => {
+    if (err) throw err;
+    if (doc) {
+      doc.socketId = socketId;
+      doc.save();
+    }
+  }).catch((err) => {
+    console.log(`Error updating socketId of user[${appleId}]`)
+  });
+}
+
 export async function identifyFace(imageUrl) {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/detect";
 

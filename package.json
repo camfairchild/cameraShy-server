@@ -4,7 +4,7 @@
 	"description": "IOS App for UoftHacks",
 	"main": "dist/server.js",
 	"scripts": {
-    "start": "node dist/server.js",
+		"start": "node dist/server.js",
 		"build": "tsc",
 		"watch-ts": "tsc -w",
 		"watch-node": "nodemon dist/server.js",
@@ -31,6 +31,7 @@
 		"pug": "^3.0.2",
 		"socket.io": "^3.1.2",
 		"tsc": "^1.20150623.0",
+		"typings": "^2.1.1",
 		"yarn": "^1.22.10"
 	},
 	"engines": {

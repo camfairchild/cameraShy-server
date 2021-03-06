@@ -21,11 +21,6 @@ interface ShootRequest {
   gameId: string
 }
 
-interface Coord {
-  lat: number,
-  long: number
-}
-
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, path.join(__dirname + '/../public/uploads'));
@@ -97,66 +92,6 @@ router.route("/createUser")
         });
 });
 
-// TODO: Make this a socket
-router.route('/shoot')
-  .post(upload.single("img"),
-    async function (req, res) {
-      console.log(req.body);
-      const body = req.body as ShootRequest;
-      const appleId = body.id;
-      console.log(appleId);
-      const imgUrl = process.env.UPLOAD + req.file.filename;
-      const loc = {lat: body.lat, long: body.long};
-      const gameId = body.gameId;
-
-      const shooter = await db.getPlayerByAppleId(appleId);
-      const victim = await checkShot(gameId, imgUrl, loc);
-      if (victim !== null) {
-        db.removePlayerFromGame(gameId, appleId);
-        res.status(200).json({
-          status: 1,
-          message: "You eliminated " + victim.name
-            + " from the game!"
-        });
-        const game = await db.getGame(gameId);
-        const numPlayers = game.players.length;
-        //io.emit("player died", {numPlayers: numPlayers,
-        //   shooter: shooter, victim: victim});
-        notifyGame(game, victim.name + " was eliminated!",
-          numPlayers + " players remain...",
-         {numPlayers: numPlayers});
-        one_sig.sendOSnotif(victim.osId, "Oof... Eliminated!",
-         "You were shot by " + shooter.name,
-          {numPlayers: numPlayers});
-      } else {
-        res.json({ status: 0, message: "You missed! No player was found." });
-      }
-    });
-
-function checkLoc(loc1: Coord, loc2) {
-  const max_dist: number = parseFloat(process.env.MAX_DIST);
-  const dist = getDistanceFromLatLonInKm(loc1.lat, loc1.long, loc2.lat, loc2.long);
-  return dist <= max_dist;
-}
-
-function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius of the earth in km
-  const dLat = deg2rad(lat2 - lat1);  // deg2rad below
-  const dLon = deg2rad(lon2 - lon1);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    ;
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c; // Distance in km
-  return d;
-}
-
-function deg2rad(deg) {
-  return deg * (Math.PI / 180)
-}
-
 async function getGallery(cb) {
   const directoryPath = path.join(__dirname, '../public/uploads');
   return fs.readdir(directoryPath, function (err, files) {
@@ -180,37 +115,6 @@ router.route("/gallery")
     res.json(files);
   });  
 });
-
-// TODO: Make this a socket 
-router.route('/loc')
-  .post(async (req, res) => {
-    const appleId = req.body.id;
-    const loc = {lat: req.body.lat,
-              long: req.body.long};
-    const gameId = req.body.gameId;
-    db.updateLoc(appleId, loc);
-    const arr = await db.getLocs(gameId);
-    console.log(arr);
-    res.json(arr);
-});
-
-// TODO: Make this a socket
-async function checkShot(gameId, imgUrl, loc) {
-  const personId = await db.identifyFace(imgUrl);
-  console.log(personId);
-  if (personId) {
-    const person = await db.getPlayerByPersonId(personId);
-    console.log(person);
-    if (await db.getNumPlayers(gameId) == 1) {
-      endGame(gameId);
-    }
-    db.addFace(personId, imgUrl);
-    if (checkLoc(loc, person.lastCoords)) {
-      return person;
-    }
-  }
-  return null;
-}
 
 router.route("/avatar")
   .get(async (req, res) => {
