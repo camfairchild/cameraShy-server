@@ -7,15 +7,14 @@ import multer from "multer";
 import * as db from "../db";
 import path from 'path';
 import fs from 'fs';
-import { app } from '../server';
 import axios from 'axios';
-const io = app.get('io');
+import * as one_sig from "../one_signal";
 
 interface MulterRequest extends Request {
   file: any;
 }
 
-interface ShootRequest extends ReadableStream<Uint8Array> {
+interface ShootRequest {
   id: string,
   lat: number,
   long: number,
@@ -61,7 +60,7 @@ router.route('/createGame')
         timeLimit
       ).then((gameId) => {
         res.json({ gameId: gameId });
-        sendOSnotif(
+        one_sig.sendOSnotif(
           host.osId,
           "Game Created!",
           "Join code: " + gameId,
@@ -98,6 +97,7 @@ router.route("/createUser")
         });
 });
 
+// TODO: Make this a socket
 router.route('/shoot')
   .post(upload.single("img"),
     async function (req, res) {
@@ -125,7 +125,7 @@ router.route('/shoot')
         notifyGame(game, victim.name + " was eliminated!",
           numPlayers + " players remain...",
          {numPlayers: numPlayers});
-        sendOSnotif(victim.osId, "Oof... Eliminated!",
+        one_sig.sendOSnotif(victim.osId, "Oof... Eliminated!",
          "You were shot by " + shooter.name,
           {numPlayers: numPlayers});
       } else {
@@ -181,6 +181,7 @@ router.route("/gallery")
   });  
 });
 
+// TODO: Make this a socket 
 router.route('/loc')
   .post(async (req, res) => {
     const appleId = req.body.id;
@@ -193,29 +194,7 @@ router.route('/loc')
     res.json(arr);
 });
 
-router.route('/cancel')
-  .get(async (req, res) => {
-    const appleId = req.query.AuthorizationappleId;
-    const gameId = req.query.gameId;
-    if (await db.gameExists(gameId)) {
-      if (verifyHost(appleId, gameId)) {
-        endGame(gameId);
-        res.status(200);
-      } else {
-        console.log("Error");
-        res.status(401).json({error: "You aren't the host!"});
-      }
-    } else {
-      console.log("Error");
-      res.status(404).json({error: "Game doesn't exist"});
-    }    
-  });
-
-async function verifyHost(appleId, gameId) {
-  const game = await db.getGame(gameId);
-  return game.host.id == appleId;
-}
-
+// TODO: Make this a socket
 async function checkShot(gameId, imgUrl, loc) {
   const personId = await db.identifyFace(imgUrl);
   console.log(personId);
@@ -233,71 +212,11 @@ async function checkShot(gameId, imgUrl, loc) {
   return null;
 }
 
-async function endGame(gameId) {
-  const game = await db.getGame(gameId);
-  if (game) {
-    const numPlayers = game.players.length;
-    io.emit("game over", {game_end: 1, numPlayers: numPlayers});
-    notifyGame(game, "Game Over!", 
-    "The game has ended. " + numPlayers + " players left!",
-     {game_end: 1, numPlayers: numPlayers});
-     db.removeGame(gameId);
-  }
-}
-
-router.route("/leave")
-  .get(async (req, res) => {
-    const appleId = req.query.appleId;
-    const gameId = req.query.gameId;
-    console.log(req.query);
-    if (await db.gameExists(gameId)) {
-      db.removePlayerFromGame(gameId, appleId);
-      console.log("Player: " + appleId + "left: " + gameId);
-      res.status(200);
-    } else {
-      console.log("Error");
-      res.status(404).json({error: "Game doesn't exist"});
-    }    
-  });
-
-async function sendOSnotif(osId, header, content, data) {
-  if (process.env.DEV) {
-    return;
-  }
-  const endpoint = "https://onesignal.com/api/v1/notifications";
-  const app_id = process.env.ONESIGNAL_APP;
-  const os_key = process.env.ONESIGNAL_KEY;
-  await axios({
-    method: "post",
-    url: endpoint,
-    data: {
-      app_id: app_id,
-      include_player_ids: [osId],
-      contents: { "en": content },
-      headings: { "en": header },
-      data: data
-    },
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Authorization": "Basic " + os_key
-    },
-  })
-    .then(function (response) {
-      console.log("Status text: " + response.status);
-      console.log("Status text: " + response.statusText);
-      console.log();
-      console.log(response.data);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
-}
-
 router.route("/avatar")
-  .get((req, res) => {
-    const personID = req.query.appleId;
-    const imgUrl = db.getAvatar(personID);
-    // TODO
+  .get(async (req, res) => {
+    const personID: string = req.query.appleId as string;
+    const imgUrl: string = await db.getAvatar(personID);
+    // TODO: not sure why this is here
     res.send(imgUrl);
   })
 
@@ -310,7 +229,7 @@ function send_error(res, error) {
 
 router.route("/numPlayers")
   .get(async (req, res) => {
-    const gameId = req.query.gameID;
+    const gameId: string = req.query.gameID as string;
     let numPlayers: number;
     try {
       numPlayers = await db.getNumPlayers(gameId);
@@ -340,7 +259,7 @@ router.route("/test_notif")
     const msg = req.body.msg;
     const data = { status: 1, content: "sample data" };
     const header = req.body.header;
-    sendOSnotif(osId, header, msg, data);
+    one_sig.sendOSnotif(osId, header, msg, data);
     console.log("Sent Notif!\n" + osId + "\n"
       + header + ": " + msg);
     res.redirect("../");
@@ -356,9 +275,3 @@ router.route("/clear").get((req, res) => {
   db.clear();
 });
 
-async function notifyGame(game, title, msg, data) {
-  for (let i = 0; i < game.players.length; i++) {
-    const osId = game.players[i].osId;
-    sendOSnotif(osId, title, msg, data);
-  }
-}
