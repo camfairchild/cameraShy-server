@@ -1,13 +1,14 @@
-import indexRouter from "./index";
-import apiRouter from "./api";  
-import * as ioRouter from './io';
+import { router as indexRouter } from "./index";
+import {router as apiRouter } from "./api";  
+import { ioRouter } from './io';
+import { Server } from "socket.io";
 
-export function routes(app: Express.Application, io: ) {
+export function routes(app, io: Server) {
     app.use(indexRouter);
     app.use(apiRouter);
 
     io.sockets.on('connection', (socket) => {
-      ioRouter(db, socket);
+      ioRouter(socket);
     });
 
     app.use((req: any, res: any) => {

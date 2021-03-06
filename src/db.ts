@@ -4,13 +4,11 @@ dotenv.config();
 
 import Game, { IGame } from "./models/Game";
 import User, { IUser } from "./models/User";
-import mongoose, {Schema, Document} from 'mongoose';
 import axios from "axios";
-
 
 const subscriptionKey = process.env["AZURE_KEY"];
 
-async function identifyFace(imageUrl) {
+export async function identifyFace(imageUrl) {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/detect";
 
   const faceId = await axios({
@@ -67,18 +65,18 @@ async function fetch_identify(faceId, personGroupId) {
 }
 
 function makeid(length) {
-  let result           = '';
-  const characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   const charactersLength = characters.length;
-  for (let i = 0; i < length; i++ ) {
-     result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
   }
   return result;
 }
 
-async function createGame(host, gfence, memberLimit, timeLimit) {
+export async function createGame(host, gfence, memberLimit, timeLimit) {
   let id = makeid(5);
-  while (await Game.findOne({id: id}).exec()) {
+  while (await Game.findOne({ id: id }).exec()) {
     id = makeid(5);
   }
 
@@ -163,7 +161,7 @@ async function fetch_train() {
     });
 }
 
-async function addFace(personId, faceUrl) {
+export async function addFace(personId, faceUrl) {
   fetch_addFace(personId, faceUrl, process.env.PERSONGID);
   fetch_train();
 }
@@ -244,7 +242,7 @@ async function delete_PersonGroup(personGroupId) {
     });
 }
 
-async function createUser(name_, apple_id, imageUrl, osId) {
+export async function createUser(name_, apple_id, imageUrl, osId) {
   const userdata = {};
   const personId = await createPerson(name_, userdata, imageUrl).catch((err) => {
     throw "Error with CreatePerson";
@@ -254,7 +252,7 @@ async function createUser(name_, apple_id, imageUrl, osId) {
     osId: osId,
     personId: personId,
     name: name_,
-    lastCoords: {lat: null, long: null},
+    lastCoords: { lat: null, long: null },
     imageUrl: imageUrl
   };
   User.create(user_obj, (err, doc: IUser) => {
@@ -266,23 +264,23 @@ async function createUser(name_, apple_id, imageUrl, osId) {
   });
 }
 
-async function gameExists(gameId) {
-  const games = await Game.find({id: gameId});
+export async function gameExists(gameId) {
+  const games = await Game.find({ id: gameId });
   console.log(games.length);
   return games.length > 0;
 }
 
-async function getNumPlayers(gameID) {
-  Game.find({ id: gameID }, (err, doc: IGame) => {
+export async function getNumPlayers(gameId: string): Promise<number> {
+  const game: IGame = await Game.findOne({ id: gameId }, (err, doc: IGame) => {
     if (err) {
       throw err;
     } else {
-      if (doc.players) {
-        return doc.players.length;
-      }
-      return 0;
+      return doc;
     }
   });
+  if (game != null) {
+    return game.players.length;
+  }
 }
 
 export async function getAvatar(appleId: string): Promise<string> {
@@ -297,7 +295,7 @@ export async function init(): Promise<void> {
   return await put_createPersonGroup(process.env.PERSONGID);
 }
 
-export async function getPlayerByAppleId(appleId) {
+export async function getPlayerByAppleId(appleId): Promise<IUser> {
   return await User.findOne({ id: appleId }, (err, doc: IUser) => {
     if (err) throw err;
     return doc;
@@ -320,7 +318,7 @@ export async function removePlayerFromGame(gameId, appleId) {
 }
 
 export async function getLocs(gameId) {
-  return await Game.findOne({id: gameId}).populate("players", (err, doc: IGame) => {
+  return await Game.findOne({ id: gameId }).populate("players", (err, doc: IGame) => {
     if (err) throw err;
     const arr = doc.players;
     const result = [];
@@ -333,7 +331,7 @@ export async function getLocs(gameId) {
 }
 
 export async function getGame(gameId) {
-  return await (await Game.findOne({id: gameId}).populate('host').populate('players'));
+  return await (await Game.findOne({ id: gameId }).populate('host').populate('players'));
 }
 
 export async function joinGame(gameId, appleId) {
@@ -342,10 +340,11 @@ export async function joinGame(gameId, appleId) {
   console.log(player);
   if (game) {
     await Game.updateOne(
-      {id: gameId},
-      {$addToSet: 
-        {players: [player._id]}
-      }, 
+      { id: gameId },
+      {
+        $addToSet:
+          { players: player._id }
+      },
       {},
       (err) => {
         if (err) throw err;
@@ -362,25 +361,13 @@ export async function clear() {
 }
 
 export async function removeGame(gameId) {
-  Game.deleteOne({id: gameId}).catch((err) => {throw err});
+  Game.deleteOne({ id: gameId }).catch((err) => { throw err });
 }
 
 export function updateLoc(appleId, loc) {
   console.log(loc);
-  User.findOne({id: appleId}, (err, doc) => {
+  User.findOne({ id: appleId }, (err, doc) => {
     doc.lastCoords = loc;
     doc.save();
   });
 }
-
-module.exports = {
-  getNumPlayers,
-  createUser,
-  getAvatar,
-  identifyFace,
-  createGame,
-  init,
-  addFace,
-  gameExists,
-  fetch_train
-};

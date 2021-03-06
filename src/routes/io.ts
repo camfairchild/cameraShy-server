@@ -1,5 +1,5 @@
 import io from 'socket.io';
-import db from "../db";
+import * as db from "../db";
 
 export async function ioRouter(socket: io.Socket) {  
     

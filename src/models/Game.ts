@@ -3,14 +3,14 @@ import { IUser } from "./User";
 
 export interface IGame extends Document {
   id: string,
-  host: IUser['_id'],
+  host: IUser,
   lat: number,
   long: number,
   rad: number,
-  bound: [number],
+  bound: number[],
   timeLimit: number,
   memberLimit: number,
-  players: [IUser['_id']]
+  players: IUser[]
 }
 
 const GameSchema: Schema = new Schema({

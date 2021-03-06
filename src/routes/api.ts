@@ -2,16 +2,29 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import express from "express";
-const router = express.Router();
+export const router = express.Router();
 import multer from "multer";
-import db from "../db";
+import * as db from "../db";
 import path from 'path';
 import fs from 'fs';
 import { app } from '../server';
+import axios from 'axios';
 const io = app.get('io');
 
 interface MulterRequest extends Request {
   file: any;
+}
+
+interface ShootRequest extends ReadableStream<Uint8Array> {
+  id: string,
+  lat: number,
+  long: number,
+  gameId: string
+}
+
+interface Coord {
+  lat: number,
+  long: number
 }
 
 const storage = multer.diskStorage({
@@ -48,9 +61,12 @@ router.route('/createGame')
         timeLimit
       ).then((gameId) => {
         res.json({ gameId: gameId });
-        header = "Game Created!";
-        msg = "Join code: " + gameId;
-        sendOSnotif(host.osId, header, msg, {});
+        sendOSnotif(
+          host.osId,
+          "Game Created!",
+          "Join code: " + gameId,
+          {}
+        );
         console.log("GameId: " + gameId);
       }).catch((err) => {
         console.log(err);
@@ -86,11 +102,12 @@ router.route('/shoot')
   .post(upload.single("img"),
     async function (req, res) {
       console.log(req.body);
-      const appleId = req.body.id;
+      const body = req.body as ShootRequest;
+      const appleId = body.id;
       console.log(appleId);
       const imgUrl = process.env.UPLOAD + req.file.filename;
-      const loc = {lat: req.body.lat, long: req.body.long};
-      const gameId = req.body.gameId;
+      const loc = {lat: body.lat, long: body.long};
+      const gameId = body.gameId;
 
       const shooter = await db.getPlayerByAppleId(appleId);
       const victim = await checkShot(gameId, imgUrl, loc);
@@ -101,7 +118,7 @@ router.route('/shoot')
           message: "You eliminated " + victim.name
             + " from the game!"
         });
-        const game = db.getGame(gameId);
+        const game = await db.getGame(gameId);
         const numPlayers = game.players.length;
         //io.emit("player died", {numPlayers: numPlayers,
         //   shooter: shooter, victim: victim});
@@ -116,8 +133,8 @@ router.route('/shoot')
       }
     });
 
-function checkLoc(loc1, loc2) {
-  const max_dist = process.env.MAX_DIST;
+function checkLoc(loc1: Coord, loc2) {
+  const max_dist: number = parseFloat(process.env.MAX_DIST);
   const dist = getDistanceFromLatLonInKm(loc1.lat, loc1.long, loc2.lat, loc2.long);
   return dist <= max_dist;
 }
@@ -148,7 +165,7 @@ async function getGallery(cb) {
       return console.log('Unable to scan directory: ' + err);
     }
     //listing all files using forEach
-    fnames = [];
+    const fnames = [];
     files.forEach(function (file) {
       // Do whatever you want to do with the file
       fnames.push("http://camera-shy.space/uploads/" + file);
@@ -205,7 +222,7 @@ async function checkShot(gameId, imgUrl, loc) {
   if (personId) {
     const person = await db.getPlayerByPersonId(personId);
     console.log(person);
-    if (db.getNumPlayers(gameId) == 1) {
+    if (await db.getNumPlayers(gameId) == 1) {
       endGame(gameId);
     }
     db.addFace(personId, imgUrl);
@@ -292,11 +309,11 @@ function send_error(res, error) {
 }
 
 router.route("/numPlayers")
-  .get((req, res) => {
+  .get(async (req, res) => {
     const gameId = req.query.gameID;
     let numPlayers: number;
     try {
-      numPlayers = db.getNumPlayers(gameId);
+      numPlayers = await db.getNumPlayers(gameId);
     } catch (err) {
       return res.status(500).send("Game ID doesn't exist!");
     }
@@ -345,5 +362,3 @@ async function notifyGame(game, title, msg, data) {
     sendOSnotif(osId, title, msg, data);
   }
 }
-
-module.exports = router;
