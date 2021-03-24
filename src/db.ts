@@ -102,7 +102,7 @@ function makeid(length) {
   return result;
 }
 
-export async function createGame(host, gfence, memberLimit, timeLimit) {
+export async function createGame(host: IUser, gfence, memberLimit: number, timeLimit: number) {
   let id = makeid(5);
   while (await Game.findOne({ id: id }).exec()) {
     id = makeid(5);
