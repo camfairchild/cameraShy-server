@@ -11,3 +11,50 @@ Can be installed by running
 ```bash
 npm install
 ```
+
+# Server API Reference
+## RESTful API /api
+### /api/createGame POST
+
+Used to create a Game
+#### __request body:__
+```JSON
+{
+    appleId: string,
+    numPlayers: number,
+    time: number,
+    lat: number,
+    long: number,
+    bound: [number],
+    rad: number
+}
+```
+#### __response:__
+Status Code <span style="color:green">200</span>
+
+Success, the Game was created. gameId is used to join
+
+```JSON
+{ gameId: gameId }
+```
+Also sends OneSig Notif to Host: 
+```
+Title: "Game Created!"
+Text: "Join code: " + gameId,
+```
+Status Code <span style="color:red">404</span>
+
+Host's appleId doesn't exist
+
+```JSON
+{error: "Host doesn't exist!"}
+```
+Status Code <span style="color:yellow">500</span>
+
+Some other error
+
+```JSON
+{error: <error text>}
+```
+
+
