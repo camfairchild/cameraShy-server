@@ -2,7 +2,7 @@ import io from 'socket.io';
 import * as db from "../db";
 import * as one_sig from "../one_signal";
 import fs from 'fs';
-import { IUser } from "./models/User";
+import { IUser } from "../models/User";
 import path from 'path';
 
 interface Coord {
