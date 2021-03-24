@@ -4,8 +4,8 @@ import { ioRouter } from './io';
 import { Server } from "socket.io";
 
 export function routes(app, sio: Server) {
-    app.use(indexRouter);
-    app.use(apiRouter);
+    app.use('/', indexRouter);
+    app.use('/api', apiRouter);
 
     sio.sockets.on('connection', (socket) => {
       ioRouter(sio, socket);
