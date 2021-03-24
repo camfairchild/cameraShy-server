@@ -42,7 +42,6 @@ Also sends OneSig Notif to Host:
 Title: "Game Created!"
 Text: "Join code: " + gameId,
 ```
-
 Status Code <span style="color:red">404</span>
 
 Host's appleId doesn't exist
