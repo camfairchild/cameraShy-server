@@ -1,4 +1,20 @@
 "use strict";
+
+/** TODO: Change to use different Face API PersonGroup for every game
+  - PUT Create PersonGroup when making new Game using gameId for PersonGroupId
+  - DELETE Delete PersonGroup when Game ends
+  - POST Create new Person in PersonGroup
+  - POST Add Face using faceID of exisiting User Model to Person
+  - POST Train when PersonGroup is updated
+  - POST Detect with image of face. Recieve FaceId
+    -> POST Identify with FaceId and Game's PersonGroupId/gameId
+    -> The Person returned will be in the game and the correct Person
+  - DELETE Delete Person from PersonGroup when they leave game
+  - search in PersonGroup for faceID when shooting
+    -> can use PersonGroup to tell if face is in game 
+      without knowing if they are a player
+*/
+
 import dotenv from "dotenv";
 dotenv.config();
 
