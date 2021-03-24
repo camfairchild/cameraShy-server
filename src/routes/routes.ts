@@ -8,7 +8,7 @@ export function routes(app, io: Server) {
     app.use(apiRouter);
 
     io.sockets.on('connection', (socket) => {
-      ioRouter(socket);
+      ioRouter(io, socket);
     });
 
     app.use((req: any, res: any) => {

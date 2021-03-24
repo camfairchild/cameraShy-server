@@ -10,7 +10,7 @@ interface Coord {
   long: number
 }
 
-export async function ioRouter(socket: io.Socket) {  
+export async function ioRouter(sio: io.Server, socket: io.Socket) {
   function addSocketIdToUser(appleId: string, socketId: string): void {
     db.updateUserSocketId(appleId, socketId);
   }
@@ -101,7 +101,7 @@ export async function ioRouter(socket: io.Socket) {
         const game = await db.getGame(gameId);
         const numPlayers = game.players.length;
         // Tell victim
-        io.to(victim.socketId).emit("shot", {
+        sio.to(victim.socketId).emit("shot", {
           imgUrl: imgUrl,
           shooter: shooter,
           numPlayers: numPlayers
