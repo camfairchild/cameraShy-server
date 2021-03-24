@@ -35,15 +35,15 @@ const upload = multer({ storage: storage });
 
 router.route('/createGame')
   .post(async (req, res) => {
-    const appleId = req.body.appleId;
-    const numPlayers = req.body.numPlayers;
+    const appleId: string = req.body.appleId;
+    const numPlayers: number = req.body.numPlayers;
     const geofence = {
       lat: req.body.lat,
       long: req.body.long,
       bound: req.body["bound[]"],
       rad: req.body.rad
     };
-    const timeLimit = req.body.time;
+    const timeLimit: number = req.body.time;
     console.log(req.body);
     console.log("Create game: " + appleId);
     const host = await db.getPlayerByAppleId(appleId);
@@ -54,7 +54,7 @@ router.route('/createGame')
         numPlayers,
         timeLimit
       ).then((gameId) => {
-        res.json({ gameId: gameId });
+        res.status(200).json({ gameId: gameId });
         one_sig.sendOSnotif(
           host.osId,
           "Game Created!",
@@ -64,7 +64,7 @@ router.route('/createGame')
         console.log("GameId: " + gameId);
       }).catch((err) => {
         console.log(err);
-        res.send(err.text);
+        res.status(500).send({error: err.text});
       })
     } else {
       console.log("Error");
