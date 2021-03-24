@@ -3,12 +3,12 @@ import {router as apiRouter } from "./api";
 import { ioRouter } from './io';
 import { Server } from "socket.io";
 
-export function routes(app, io: Server) {
+export function routes(app, sio: Server) {
     app.use(indexRouter);
     app.use(apiRouter);
 
-    io.sockets.on('connection', (socket) => {
-      ioRouter(io, socket);
+    sio.sockets.on('connection', (socket) => {
+      ioRouter(sio, socket);
     });
 
     app.use((req: any, res: any) => {
