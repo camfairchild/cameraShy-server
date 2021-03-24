@@ -75,14 +75,13 @@ router.route('/createGame')
 
 router.route("/createUser")
   .post(upload.single("img"),
-    async function (req, res) {
+    function (req, res) {
       const name = req.body.name;
       const id = req.body.id;
       const file = req.file;
       const fileUrl = process.env.UPLOAD + file.filename;
       const osId = req.body.osId;
-      await db
-        .createUser(name, id, fileUrl, osId)
+      db.createUser(name, id, fileUrl, osId)
         .then((result) => {
           console.log(result);
           res.status(200).send();
