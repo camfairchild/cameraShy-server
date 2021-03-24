@@ -18,7 +18,7 @@ npm install
 
 Used to create a Game
 #### __request body:__
-```JSON
+```TypeScript
 {
     appleId: string,
     numPlayers: number,
@@ -34,7 +34,7 @@ Status Code <span style="color:green">200</span>
 
 Success, the Game was created. gameId is used to join
 
-```JSON
+```TypeScript
 { gameId: gameId }
 ```
 Also sends OneSig Notif to Host: 
@@ -46,15 +46,15 @@ Status Code <span style="color:red">404</span>
 
 Host's appleId doesn't exist
 
-```JSON
+```TypeScript
 {error: "Host doesn't exist!"}
 ```
 Status Code <span style="color:yellow">500</span>
 
 Some other error
 
-```JSON
-{error: <error text>}
+```TypeScript
+{error: "error text"}
 ```
 
 
