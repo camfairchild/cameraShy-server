@@ -202,12 +202,12 @@ export async function addFace(personId: string, faceUrl: string): Promise<void> 
   fetch_train();
 }
 
-async function fetch_createPerson(name_: string, uData: any, personGroupId: string): Promise<void> {
+async function fetch_createPerson(name_: string, uData: any, personGroupId: string): Promise<string> {
 
   const endpoint = process.env["AZURE_ENDPOINT"] +
     "/face/v1.0/persongroups/" + personGroupId + "/persons";
 
-  await axios({
+  const personId = axios({
     method: "post",
     url: endpoint,
     data: {
@@ -226,8 +226,10 @@ async function fetch_createPerson(name_: string, uData: any, personGroupId: stri
       return response.data.personId;
     })
     .catch(function (error) {
-      console.log(error);
+      console.log(error);      
+      return null;
     });
+  return personId;
 }
 
 async function put_createPersonGroup(personGroupId) {
@@ -317,13 +319,16 @@ export async function getNumPlayers(gameId: string): Promise<number> {
   if (game != null) {
     return game.players.length;
   }
+  return null;
 }
 
 export async function getAvatar(appleId: string): Promise<string> {
   await User.findOne({ id: appleId }, (err, doc: IUser) => {
     if (err) throw err;
-    return doc.imageUrl;
-  })
+    if (doc) {
+      return doc.imageUrl;
+    }
+  })  
   return null;
 }
 
