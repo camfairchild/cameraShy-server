@@ -405,3 +405,8 @@ export function updateLoc(appleId, loc) {
     doc.save();
   });
 }
+
+export async function getHost(gameId: string): Promise<IUser> {
+  const game: IGame = await getGame(gameId);
+  return game.host;
+}
