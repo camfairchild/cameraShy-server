@@ -22,7 +22,10 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
     // Subscribe socket to room for game
     const user: IUser = await db.getPlayerByAppleId(appleId);
     if (user == null) {
-      socket.emit("join", { status: 404, error: "User with appleId does not exist" });
+      socket.emit("join", {
+        status: 404,
+        error: "User with appleId does not exist"
+      });
       return;
     }
     db.joinGame(gameId, appleId).then((game) => {
@@ -45,21 +48,50 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
     });
   });
 
-  socket.on("start game", (appleId, gameId, time) => {
+  socket.on("start game", async (appleId: string, gameId: string, time) => {
     // Check if game exists
-    // Check if host has appleId
-    socket.to(gameId).emit('game started', { gameId: gameId, startTime: time });
+    if (db.gameExists(gameId)) {
+      // Check if host has appleId
+      const host = await db.getHost(gameId);
+      const hostId = host.id;
+      if (hostId === appleId) {        
+        socket.emit('game started', {
+          status: 200
+        });
+        socket.to(gameId).emit('game started', {
+          gameId: gameId,
+          startTime: time
+        });
+      } else {
+        socket.emit('game started', {
+          status: 403,
+          error: 'only the host can start the game'
+        });
+      }
+    } else {
+      socket.emit('game started', {
+        status: 404,
+        error: 'game does not exist'
+      });
+    }
   });
 
   socket.on("cancel game", (appleId, gameId) => {
     db.gameExists(gameId).then((exists) => {
       if (exists && verifyHost(appleId, gameId)) {
         endGame(gameId, true);
-        socket.emit("success", "The game was ended successfully");
+        socket.emit("cancel game", {
+          status: 200,
+          message: "The game was ended successfully"
+        });
         console.log(`Host[${appleId}] ended game[${gameId}]`)
       } else {
         console.log(`Player[${appleId}] that is not the host tried to end the game[${gameId}] early!`);
-        socket.emit("error", "Only the host can end the game!");
+        socket.emit("cancel game", {
+          status: 403,
+          error: "Only the host can end the game!"
+        }
+          );
       }
     })
   });
@@ -68,19 +100,34 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
     db.gameExists(gameId).then((exists) => {
       if (exists) {
         db.removePlayerFromGame(gameId, appleId).then((left) => {
-          socket.emit("success", `Left game[${gameId}] successfully!`)
+          socket.emit("leave game", 
+          {status: 200, gameId: gameId});
+          console.log(`player[${appleId}] left game successfully`);
         })
           .catch((err) => {
-            socket.emit("error", `Not in game[${gameId}]!`)
+            socket.emit("leave game", {
+                status: 400,
+                error: "Not in game",
+                gameId: gameId
+              }
+            );
+            console.log(`Player[${appleId}] tried to leave game. \
+             Not in game[${gameId}]!`);
           });
         socket.to(gameId).emit(
-          "player left",
-          { appleId: appleId }
+          "player left", {
+            appleId: appleId
+          }
         );
         console.log(`Player[${appleId}] left game[${gameId}]`);
       } else {
         console.log(`Error. Player[${appleId}] tried to leave game[${gameId}] that doesn't exist`);
-        socket.emit("error", `game[${gameId}] does not exist!`);
+        socket.emit("leave game", {
+            status: 404,
+            error: "Game does not exist",
+            gameId: gameId
+          }
+        );
       }
     }).catch((err) => {
       console.log(err);
@@ -90,7 +137,7 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
   socket.on('shoot', (appleId, img, loc, gameId) => {
     const buffer = Buffer.from(img);
     fs.writeFile('/tmp/image', buffer, async () => {
-      socket.emit("upload status", 200);
+      socket.emit("shoot", {status: 200});
 
       const imgUrl: string = path.join(__dirname + '/../public/uploads/') + `${Date.now()}.png`;
       const shooter: IUser = await db.getPlayerByAppleId(appleId);
@@ -102,6 +149,7 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
         const numPlayers = game.players.length;
         // Tell victim
         sio.to(victim.socketId).emit("shot", {
+          status: 200,
           imgUrl: imgUrl,
           shooter: shooter,
           numPlayers: numPlayers
@@ -146,7 +194,10 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
     db.updateLoc(appleId, loc);
     db.getLocs(gameId).then((arr) => {
       // Send array of locations to the sender
-      socket.emit("location", { locations: arr });
+      socket.emit("location",
+       {
+        status: 200, 
+        locations: arr });
     });
   });
 
@@ -200,13 +251,20 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
     db.getGame(gameId).then((game) => {
       if (game) {
         const numPlayers = game.players.length;
-        socket.to(gameId).emit("game over", { game_end: 1, numPlayers: numPlayers, early: early });
+        socket.to(gameId).emit("game over", {
+          game_end: 1,
+          numPlayers: numPlayers,
+          early: early 
+        });
         notifyGame(game, "Game Over!",
           "The game has ended. " + numPlayers + " players left!",
           { game_end: 1, numPlayers: numPlayers });
         db.removeGame(gameId);
       } else {
-        socket.emit("error", `The game[${gameId}] does not exist!`)
+        socket.emit("error", {
+          status: 404,
+          error: `The game[${gameId}] does not exist!`
+        })
       }
     }).catch((err) => {
       console.log(err);

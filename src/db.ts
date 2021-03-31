@@ -21,6 +21,7 @@ dotenv.config();
 import Game, { IGame } from "./models/Game";
 import User, { IUser, ICoords } from "./models/User";
 import axios from "axios";
+import { error } from "node:console";
 
 const subscriptionKey = process.env["AZURE_KEY"];
 
@@ -31,6 +32,7 @@ class Geofence {
   rad: number
 }
 
+export function updateUserSocketId(appleId: string, socketId: string): void {
   User.findOne({id: appleId}, (err, doc) => {
     if (err) throw err;
     if (doc) {
@@ -42,7 +44,7 @@ class Geofence {
   });
 }
 
-export async function identifyFace(imageUrl) {
+export async function identifyFace(imageUrl: string): Promise<string> {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/detect";
 
   const faceId = await axios({
@@ -71,7 +73,7 @@ export async function identifyFace(imageUrl) {
   return await fetch_identify(faceId, process.env.PERSONGID);
 }
 
-async function fetch_identify(faceId, personGroupId) {
+async function fetch_identify(faceId, personGroupId): Promise<string> {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/identify";
 
   return axios({
@@ -108,7 +110,7 @@ function makeid(length) {
   return result;
 }
 
-export async function createGame(host: IUser, gfence, memberLimit: number, timeLimit: number) {
+export async function createGame(host: IUser, gfence: Geofence, memberLimit: number, timeLimit: number): Promise<string> {
   let id = makeid(5);
   while (await Game.findOne({ id: id }).exec()) {
     id = makeid(5);
@@ -134,7 +136,7 @@ export async function createGame(host: IUser, gfence, memberLimit: number, timeL
   return id;
 }
 
-async function createPerson(name_, userdata, faceUrl) {
+async function createPerson(name_, userdata, faceUrl): Promise<string> {
   const personGroupId = process.env.PERSONGID;
   const personId = await fetch_createPerson(name_, userdata, personGroupId);
   await fetch_addFace(personId, faceUrl, personGroupId);
@@ -142,12 +144,12 @@ async function createPerson(name_, userdata, faceUrl) {
   return personId;
 }
 
-async function fetch_addFace(personId, faceUrl, personGroupId) {
+async function fetch_addFace(personId, faceUrl, personGroupId): Promise<void> {
   const endpoint = process.env["AZURE_ENDPOINT"] +
     "face/v1.0/persongroups/" + personGroupId + "/persons/" +
     personId + "/persistedFaces";
 
-  return await axios({
+  await axios({
     method: "post",
     url: endpoint,
     params: {
@@ -195,17 +197,17 @@ async function fetch_train() {
     });
 }
 
-export async function addFace(personId, faceUrl) {
+export async function addFace(personId: string, faceUrl: string): Promise<void> {
   fetch_addFace(personId, faceUrl, process.env.PERSONGID);
   fetch_train();
 }
 
-async function fetch_createPerson(name_, uData, personGroupId) {
+async function fetch_createPerson(name_: string, uData: any, personGroupId: string): Promise<void> {
 
   const endpoint = process.env["AZURE_ENDPOINT"] +
     "/face/v1.0/persongroups/" + personGroupId + "/persons";
 
-  return await axios({
+  await axios({
     method: "post",
     url: endpoint,
     data: {
@@ -276,7 +278,7 @@ async function delete_PersonGroup(personGroupId) {
     });
 }
 
-export async function createUser(name_, apple_id, imageUrl, osId) {
+export async function createUser(name_: string, apple_id: string, imageUrl: string, osId): Promise<void> {
   const userdata = {};
   const personId = await createPerson(name_, userdata, imageUrl).catch((err) => {
     throw "Error with CreatePerson";
@@ -298,7 +300,7 @@ export async function createUser(name_, apple_id, imageUrl, osId) {
   });
 }
 
-export async function gameExists(gameId) {
+export async function gameExists(gameId: string): Promise<boolean> {
   const games = await Game.find({ id: gameId });
   console.log(games.length);
   return games.length > 0;
@@ -329,21 +331,21 @@ export async function init(): Promise<void> {
   return await put_createPersonGroup(process.env.PERSONGID);
 }
 
-export async function getPlayerByAppleId(appleId): Promise<IUser> {
+export async function getPlayerByAppleId(appleId: string): Promise<IUser> {
   return await User.findOne({ id: appleId }, (err, doc: IUser) => {
     if (err) throw err;
     return doc;
   });
 }
 
-export async function getPlayerByPersonId(personId) {
+export async function getPlayerByPersonId(personId: string): Promise<IUser> {
   return await User.findOne({ personId: personId }, (err, doc: IUser) => {
     if (err) throw err;
     return doc;
   });
 }
 
-export async function removePlayerFromGame(gameId, appleId) {
+export async function removePlayerFromGame(gameId: string, appleId: string): Promise<void> {
   const game = await Game.findOne({ id: gameId }, (err, doc: IGame) => {
     if (err) throw err;
     return doc;
@@ -351,24 +353,25 @@ export async function removePlayerFromGame(gameId, appleId) {
   game.update({ '$pull': { players: { id: appleId } } });
 }
 
-export async function getLocs(gameId) {
-  return await Game.findOne({ id: gameId }).populate("players", (err, doc: IGame) => {
+export async function getLocs(gameId: string): Promise<ICoords[]> {
+  const game: IGame = await Game.findOne({ id: gameId }).populate("players", (err, doc: IGame) => {
     if (err) throw err;
-    const arr = doc.players;
-    const result = [];
-    for (let i = 0; i < arr.length; i++) {
-      const player = arr[i];
-      result.push(player.lastCoords);
-    }
-    return result;
+    return doc;
   });
+  const arr = game.players;
+  const result: ICoords[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    const player = arr[i];
+    result.push(player.lastCoords);
+  }
+  return result;
 }
 
-export async function getGame(gameId) {
+export async function getGame(gameId: string): Promise<IGame> {
   return await (await Game.findOne({ id: gameId }).populate('host').populate('players'));
 }
 
-export async function joinGame(gameId, appleId) {
+export async function joinGame(gameId: string, appleId: string): Promise<IGame> {
   const game = await getGame(gameId);
   const player = await getPlayerByAppleId(appleId);
   console.log(player);
@@ -390,18 +393,19 @@ export async function joinGame(gameId, appleId) {
   }
 }
 
-export async function clear() {
+export async function clear(): Promise<void> {
   await delete_PersonGroup(process.env.PERSONGID);
 }
 
-export async function removeGame(gameId) {
+export async function removeGame(gameId: string): Promise<void> {
   Game.deleteOne({ id: gameId }).catch((err) => { throw err });
 }
 
-export function updateLoc(appleId, loc) {
+export function updateLoc(appleId: string, loc: ICoords): void {
   console.log(loc);
-  User.findOne({ id: appleId }, (err, doc) => {
-    doc.lastCoords = loc;
+  User.findOne({ id: appleId }, (err, doc: IUser) => {
+    doc.lastCoords.lat = loc.lat;
+    doc.lastCoords.long = loc.long;
     doc.save();
   });
 }
