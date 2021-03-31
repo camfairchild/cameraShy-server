@@ -84,10 +84,10 @@ router.route("/createUser")
       db.createUser(name, id, fileUrl, osId)
         .then((result) => {
           console.log(result);
-          res.status(200).send();
+          res.sendStatus(200);
         })
         .catch((err) => {
-          send_error(res, err);
+          send_error(res, err, 500);
         });
 });
 
@@ -96,13 +96,14 @@ async function getGallery(cb) {
   return fs.readdir(directoryPath, function (err, files) {
     //handling error
     if (err) {
-      return console.log('Unable to scan directory: ' + err);
+      console.log('Unable to scan directory: ' + err);
+      throw err
     }
     //listing all files using forEach
     const fnames = [];
     files.forEach(function (file) {
       // Do whatever you want to do with the file
-      fnames.push("http://camera-shy.space/uploads/" + file);
+      fnames.push("/uploads/" + file);
     });
     return cb(fnames);
   });
@@ -111,61 +112,55 @@ async function getGallery(cb) {
 router.route("/gallery")
 .get(async (req, res) => {
   getGallery((files) => {
-    res.json(files);
+    res.status(200).json(files);
+  }).catch((err) => {
+    send_error(res, err, 500);
+  })
   });  
-});
 
 router.route("/avatar")
   .get(async (req, res) => {
-    const personID: string = req.query.appleId as string;
-    const imgUrl: string = await db.getAvatar(personID);
-    // TODO: not sure why this is here
-    res.send(imgUrl);
+    const appleId: string = req.query.appleId as string;
+    db.getAvatar(appleId).then((imgUrl: string) => {
+      if (imgUrl != null) {
+        res.status(200).json({
+          avatarUrl: imgUrl
+        });
+      } else {
+        send_error(res,
+           `User with appleId ${appleId} does not exist`,
+            404);
+      }
+  })
+    .catch((err) => {
+      send_error(res, err, 500);
+    });
   })
 
-function send_error(res, error) {
-  const message = "There was an error: " + error;
-  res.status(404)
-    .type('text')
-    .send(message);
+function send_error(res, error, status_code: number) {
+  res.status(status_code)
+    .json({error: error});
 }
 
 router.route("/numPlayers")
   .get(async (req, res) => {
-    const gameId: string = req.query.gameID as string;
-    let numPlayers: number;
-    try {
-      numPlayers = await db.getNumPlayers(gameId);
-    } catch (err) {
-      return res.status(500).send("Game ID doesn't exist!");
+    const gameId: string = req.query.gameId as string;
+    db.getNumPlayers(gameId)
+    .then((num) => {
+      if (num != null) {
+        res.status(200)
+          .json({
+            numPlayers: num
+          });
+      } else {
+        send_error(res,
+          `Game with gameId ${gameId} does not exist`,
+           404);
     }
-    res.status(200).send(numPlayers);
-  });
-
-// Tests
-router.route("/test_faceid")
-  .post(upload.single('file'), async (req, res) => {
-    const file = req.file;    
-    const imgUrl = process.env.UPLOAD + file.filename;
-    console.log(imgUrl);
-    //await db.createUser("test", "test", imgUrl, "test");
-    //await new Promise(r => setTimeout(r, 2000));
-    const id = await db.identifyFace(imgUrl);
-    console.log(id);
-    res.send(id);
-  });
-
-router.route("/test_notif")
-  .post((req, res) => {
-    console.log(req.body);
-    const osId = req.body.osId;
-    const msg = req.body.msg;
-    const data = { status: 1, content: "sample data" };
-    const header = req.body.header;
-    one_sig.sendOSnotif(osId, header, msg, data);
-    console.log("Sent Notif!\n" + osId + "\n"
-      + header + ": " + msg);
-    res.redirect("../");
+    })
+    .catch((err) => {
+      send_error(res, err, 500);
+    })
   });
 
 router.route("/init").get((req, res) => {
