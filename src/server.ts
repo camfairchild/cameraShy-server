@@ -8,7 +8,6 @@ import path from "path";
 import fs from 'fs';
 import { createServer } from "https";
 import { Server, Socket } from "socket.io";
-import ip from "ip";
 export const app = express();
 
 const server = createServer({
@@ -17,7 +16,6 @@ const server = createServer({
 }, app);
 
 const sio = new Server(server);
-console.log( ip.address() );
 import mongoose from "mongoose";
 mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true});
 
