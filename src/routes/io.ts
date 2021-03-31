@@ -10,7 +10,7 @@ interface Coord {
   long: number
 }
 
-export async function ioRouter(sio: io.Server, socket: io.Socket) {
+export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void> {
   function addSocketIdToUser(appleId: string, socketId: string): void {
     db.updateUserSocketId(appleId, socketId);
   }
@@ -220,4 +220,4 @@ export async function ioRouter(sio: io.Server, socket: io.Socket) {
     }
   }
 
-};
+}
