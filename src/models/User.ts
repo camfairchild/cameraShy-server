@@ -1,15 +1,17 @@
 import mongoose, { Schema, Document } from "mongoose";
 
+export interface ICoords {
+  lat: number,
+  long: number
+}
+
 export interface IUser extends Document {
   id: string,
   osId: string,
   socketId: string,
   personId: string,
   name: string,
-  lastCoords: {
-    lat: number,
-    long: number,
-  },
+  lastCoords: ICoords,
   imageUrl: string
 }
 

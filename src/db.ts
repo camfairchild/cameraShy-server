@@ -19,12 +19,18 @@ import dotenv from "dotenv";
 dotenv.config();
 
 import Game, { IGame } from "./models/Game";
-import User, { IUser } from "./models/User";
+import User, { IUser, ICoords } from "./models/User";
 import axios from "axios";
 
 const subscriptionKey = process.env["AZURE_KEY"];
 
-export function updateUserSocketId(appleId: string, socketId: string) {
+class Geofence {
+  lat: number
+  long:  number
+  bound: number[]
+  rad: number
+}
+
   User.findOne({id: appleId}, (err, doc) => {
     if (err) throw err;
     if (doc) {
