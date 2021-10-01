@@ -47,7 +47,7 @@ export function updateUserSocketId(appleId: string, socketId: string): void {
 export async function identifyFace(imageUrl: string): Promise<string> {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/detect";
 
-  const faceId = await axios({
+  const faceId = await axios.request<any>({
     method: "post",
     url: endpoint,
     params: {
@@ -76,7 +76,7 @@ export async function identifyFace(imageUrl: string): Promise<string> {
 async function fetch_identify(faceId, personGroupId): Promise<string> {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/identify";
 
-  return axios({
+  return axios.request<any>({
     method: "post",
     url: endpoint,
     data: {
@@ -92,7 +92,7 @@ async function fetch_identify(faceId, personGroupId): Promise<string> {
       console.log("Status text: " + response.status);
       console.log("Status text: " + response.statusText);
       console.log();
-      console.log(response.data.error);
+      console.log(response.data);
       return response.data[0].candidates[0].personId;
     })
     .catch(function (error) {
@@ -146,10 +146,10 @@ async function createPerson(name_, userdata, faceUrl): Promise<string> {
 
 async function fetch_addFace(personId, faceUrl, personGroupId): Promise<void> {
   const endpoint = process.env["AZURE_ENDPOINT"] +
-    "face/v1.0/persongroups/" + personGroupId + "/persons/" +
+    "/face/v1.0/persongroups/" + personGroupId + "/persons/" +
     personId + "/persistedFaces";
 
-  await axios({
+  await axios.request<any>({
     method: "post",
     url: endpoint,
     params: {
@@ -179,7 +179,7 @@ async function fetch_train() {
   const endpoint = process.env["AZURE_ENDPOINT"] +
     "/face/v1.0/persongroups/" + process.env.PERSONGID + "/train/";
 
-  return await axios({
+  return await axios.request<any>({
     method: "post",
     url: endpoint,
     headers: {
@@ -207,7 +207,7 @@ async function fetch_createPerson(name_: string, uData: any, personGroupId: stri
   const endpoint = process.env["AZURE_ENDPOINT"] +
     "/face/v1.0/persongroups/" + personGroupId + "/persons";
 
-  const personId = axios({
+  const personId = await axios.request<any>({
     method: "post",
     url: endpoint,
     data: {
@@ -235,7 +235,7 @@ async function fetch_createPerson(name_: string, uData: any, personGroupId: stri
 async function put_createPersonGroup(personGroupId) {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/persongroups/" + personGroupId;
 
-  await axios({
+  await axios.request<any>({
     method: "put",
     url: endpoint,
     data: {
@@ -262,7 +262,7 @@ async function put_createPersonGroup(personGroupId) {
 async function delete_PersonGroup(personGroupId) {
   const endpoint = process.env["AZURE_ENDPOINT"] + "/face/v1.0/persongroups/" + personGroupId;
 
-  await axios({
+  await axios.request<any>({
     method: "delete",
     url: endpoint,
     headers: {

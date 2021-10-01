@@ -11,24 +11,25 @@ import { Server, Socket } from "socket.io";
 export const app = express();
 
 const server = createServer({
-  key: fs.readFileSync(process.env.KEY_PATH),
-  cert: fs.readFileSync(process.env.CRT_PATH)
+  key: fs.readFileSync(path.join(__dirname, process.env.KEY_PATH)),
+  cert: fs.readFileSync(path.join(__dirname, process.env.CRT_PATH))
 }, app);
 
 const sio = new Server(server);
 import mongoose from "mongoose";
-mongoose.connect(process.env.MONGO_URI, {useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect(process.env.MONGO_URI);
 
-app.set("views", path.join(__dirname, "views"));
+app.set("views", path.join(__dirname, "../views"));
 app.set("view engine", "pug");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "../public")));
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', function() {
+  console.log("Connected to DB")
   server.listen(process.env.PORT || 3000);
 
   routes(app, sio);

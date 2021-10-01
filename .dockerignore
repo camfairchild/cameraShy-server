@@ -1,0 +1,10 @@
+dist
+node_modules
+dockerfile
+LICENSE
+README.md
+workspace.code-workspace
+.eslintignore
+.eslintrc.js
+.gitignore
+/public/uploads/*

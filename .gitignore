@@ -3,3 +3,5 @@
 public/uploads/*
 node_modules
 dist
+*.pem
+*.code-workspace

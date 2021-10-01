@@ -23,7 +23,7 @@ interface ShootRequest {
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname + '/../public/uploads'));
+    cb(null, path.join(__dirname + '../../../public/uploads'));
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + path.extname(file.originalname)) //Appending extension
@@ -173,3 +173,9 @@ router.route("/clear").get((req, res) => {
   db.clear();
 });
 
+router.route("/test_faceid").post(upload.single("file"),
+async function (req, res) {
+  const file = req.file;
+  const fileUrl = process.env.UPLOAD + file.filename;
+  res.status(200).json(await db.identifyFace(fileUrl));
+});
