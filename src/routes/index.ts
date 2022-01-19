@@ -1,8 +1,15 @@
 import express from 'express';
+import axios from 'axios';
+import * as db from "../db";
 export const router = express.Router();
 
-router.get('/', function(req, res) {
-  res.render('index');
+router.get('/', async function(req, res) {
+  const games = await db.getAllGames();
+  const users = await db.getAllUsers();
+  res.render('index', {
+    games: games,
+    users: users
+  });
 });
 
 router.get('/.well-known/acme-challenge/laAtdnLp-PsYG09vAsXYUwkzIjEelWSew2t69vimqkE', (req, res) => {

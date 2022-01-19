@@ -10,8 +10,40 @@
   body {
     margin: auto;
     text-align: center;
+    font-family: Verdana,sans-serif;
   }
   
   form {
     margin: 10px;
   }
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+  border: 2px solid lightslategray;
+  margin: auto;
+}
+
+tr {
+  border-bottom: 1px solid #ddd;
+}
+
+th, td {
+  border: none;
+  text-align: left;
+  padding: 8px;
+}
+
+table.users tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+table.games tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.userImg {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}

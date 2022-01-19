@@ -81,5 +81,37 @@ html
             input(type='text' name='gameId' id='gameId')
         label
           input(type='submit' value='Loc User')
+    h1 Games List 
+    table.games
+      tr
+        th Game ID
+        th Players
+        th Alive
+        th Bound
+      each game in games
+        tr
+          td= game.id
+          td= game.players
+          td= game.alive
+          td= game.bound
 
-
+    h1 Users List
+    table.users
+      tr
+        th Player ID
+        th name
+        th socketId
+        th personId
+        th lastCoords
+        th Image
+      each user in users
+        tr
+          td= user.id
+          td= user.name
+          td= user.socketId
+          td= user.personId
+          td= user.lastCoords
+          td
+            img(src=user.imageUrl).userImg
+          
+        

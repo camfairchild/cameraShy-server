@@ -567,3 +567,11 @@ export async function getHost(gameId: string): Promise<IUser> {
   return game.host;
 }
 Promise;
+
+export async function getAllGames(): Promise<IGame[]> {
+  return await Game.find();
+}
+
+export async function getAllUsers(): Promise<IUser[]> {
+  return await User.find();
+}
