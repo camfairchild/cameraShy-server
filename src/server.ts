@@ -13,7 +13,12 @@ const server = createServer(app);
 
 const sio = new Server(server);
 import mongoose from "mongoose";
-mongoose.connect(process.env.MONGO_URI);
+try {
+  mongoose.connect(process.env.MONGO_URI);
+} catch (error) {
+  console.error("Error connecting to mongo");
+  console.error(error);
+}
 
 app.set("views", path.join(__dirname, "../views"));
 app.set("view engine", "pug");
