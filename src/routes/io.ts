@@ -202,15 +202,15 @@ export async function ioRouter(sio: io.Server, socket: io.Socket): Promise<void>
   });
 
   async function checkShot(gameId, imgUrl, loc) {
-    const personId = await db.identifyFace(imgUrl);
+    const personId = await db.identifyFace(imgUrl, gameId);
     console.log(personId);
     if (personId) {
       const person = await db.getPlayerByPersonId(personId);
       console.log(person);
-      if (await db.getNumPlayers(gameId) == 1) {
+      if (await db.getNumPlayersAlive(gameId) == 1) {
         endGame(gameId, false);
       }
-      db.addFace(personId, imgUrl);
+      db.addFace(personId, imgUrl, gameId);
       if (checkLoc(loc, person.lastCoords)) {
         return person;
       }
