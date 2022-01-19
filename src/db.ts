@@ -309,17 +309,51 @@ export async function gameExists(gameId: string): Promise<boolean> {
 }
 
 export async function getNumPlayers(gameId: string): Promise<number> {
-  const game: IGame = await Game.findOne({ id: gameId }, (err, doc: IGame) => {
-    if (err) {
-      throw err;
-    } else {
-      return doc;
+  try {
+    const allPlayers: Array<IUser> = await Game.aggregate([
+      {
+        $match: {
+          id: gameId,
+        },
+      },
+      {
+        $unwind: "$players",
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$players",
+        },
+      },
+    ]);
+    return allPlayers.length;
+  } catch (err) {
+    console.log(err);
+    return null;
     }
-  });
-  if (game != null) {
-    return game.players.length;
   }
+
+export async function getNumPlayersAlive(gameId: string): Promise<number> {
+  try {
+    const alivePlayers: Array<IUser> = await Game.aggregate([
+      {
+        $match: {
+          id: gameId,
+        },
+      },
+      {
+        $unwind: "$alive",
+      },
+      {
+        $replaceRoot: {
+          newRoot: "$alive",
+        },
+      },
+    ]);
+    return alivePlayers.length;
+  } catch (err) {
+    console.log(err);
   return null;
+  }
 }
 
 export async function getAvatar(appleId: string): Promise<string> {

@@ -10,7 +10,8 @@ export interface IGame extends Document {
   bound: number[],
   timeLimit: number,
   memberLimit: number,
-  players: IUser[]
+  players: IUser[],
+  alive: IUser[],
 }
 
 const GameSchema: Schema = new Schema({
@@ -26,6 +27,10 @@ const GameSchema: Schema = new Schema({
   timeLimit: Number,
   memberLimit: Number,
   players: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  alive: [{
     type: Schema.Types.ObjectId,
     ref: 'User'
   }]

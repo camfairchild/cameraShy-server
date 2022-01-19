@@ -5,9 +5,7 @@ import express from "express";
 export const router = express.Router();
 import multer from "multer";
 import * as db from "../db";
-import path from 'path';
-import fs from 'fs';
-import axios from 'axios';
+import axios from "axios";
 import * as one_sig from "../one_signal";
 
 interface MulterRequest extends Request {
@@ -142,31 +140,22 @@ function send_error(res, error, status_code: number) {
     .json({error: error});
 }
 
-router.route("/numPlayers")
-  .get(async (req, res) => {
+router.route("/numPlayers").get(async (req, res) => {
+  try {
     const gameId: string = req.query.gameId as string;
-    db.getNumPlayers(gameId)
-    .then((num) => {
-      if (num != null) {
-        res.status(200)
-          .json({
-            numPlayers: num
+    const numPlayers = await db.getNumPlayers(gameId);
+    const numPlayersAlive = await db.getNumPlayersAlive(gameId);
+    if (numPlayers != null && numPlayersAlive != null) {
+      res.status(200).json({
+        numPlayers,
+        numPlayersAlive,
           });
       } else {
-        send_error(res,
-          `Game with gameId ${gameId} does not exist`,
-           404);
+      send_error(res, `Game with gameId ${gameId} does not exist`, 404);
     }
-    })
-    .catch((err) => {
+  } catch (err) {
       send_error(res, err, 500);
-    })
-  });
-
-router.route("/init").get((req, res) => {
-  console.log("started");
-  db.init();
-  res.end();
+  }
 });
 
 router.route("/clear").get((req, res) => {
