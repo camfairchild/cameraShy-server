@@ -5,15 +5,11 @@ dotenv.config();
 import express from "express";
 import { routes } from "./routes/routes";
 import path from "path";
-import fs from 'fs';
-import { createServer } from "https";
+import { createServer } from "http";
 import { Server, Socket } from "socket.io";
 export const app = express();
 
-const server = createServer({
-  key: fs.readFileSync(path.join(__dirname, process.env.KEY_PATH)),
-  cert: fs.readFileSync(path.join(__dirname, process.env.CRT_PATH))
-}, app);
+const server = createServer(app);
 
 const sio = new Server(server);
 import mongoose from "mongoose";
