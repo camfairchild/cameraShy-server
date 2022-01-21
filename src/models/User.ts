@@ -6,7 +6,8 @@ export interface ICoords {
 }
 
 export interface IUser extends Document {
-  id: string,
+  appleId: string,
+  googleId: string,
   osId: string,
   socketId: string,
   personId: string,
@@ -16,7 +17,8 @@ export interface IUser extends Document {
 }
 
 const UserSchema: Schema = new Schema({
-  id: String,
+  appleId: String,
+  googleId: String,
   osId: String,
   socketId: String,
   personId: String,

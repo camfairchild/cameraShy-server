@@ -9,6 +9,7 @@ import path from "path";
 import fs from "fs";
 import axios from "axios";
 import * as one_sig from "../one_signal";
+import { OAuth2Client } from 'google-auth-library';
 
 interface MulterRequest extends Request {
   file: any;
@@ -65,23 +66,6 @@ router.route("/createGame").post(async (req, res) => {
     console.log("Error");
     res.status(404).json({ error: "Host doesn't exist!" });
   }
-});
-
-router.route("/createUser").post(upload.single("img"), function (req, res) {
-  const name = req.body.name;
-  const id = req.body.id;
-  const file = req.file;
-  const fileUrl = process.env.UPLOAD + file.filename;
-  const osId = req.body.osId;
-  const gameId = req.body.gameId;
-  db.createUser(name, id, fileUrl, osId, gameId)
-    .then((result) => {
-      console.log(result);
-      res.sendStatus(200);
-    })
-    .catch((err) => {
-      send_error(res, err, 500);
-    });
 });
 
 async function getGallery(cb) {
@@ -160,4 +144,85 @@ router
     const fileUrl = process.env.UPLOAD + file.filename;
     const gameId = req.body.gameId;
     res.status(200).json(await db.identifyFace(fileUrl, gameId));
+  });
+
+router
+  .route('/login')
+  .post(async function (req, res) {
+    const { appleId, google_idToken } = req.body;
+    let googleId = null;
+    let player = null;
+    if (google_idToken) {
+      // google auth
+      try {
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        const ticket = await client.verifyIdToken({
+            idToken: google_idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        googleId = payload['sub'];
+
+        player = await db.getPlayerByGoogleId(googleId);
+      } catch (err) {
+        // error with google authentication
+        console.error(err);
+        send_error(res, "Google authentication error; Please retry.", 500);
+      }
+      if (player) {
+        res.status(200).json({
+          player: player,
+        });
+      }
+    } else if (appleId) {
+      // apple auth
+      player = await db.getPlayerByAppleId(appleId);
+      if (player) {
+        res.status(200).json({
+          player,
+        });
+      }
+    } else {
+      send_error(res, 'Please login with appleId or google_idToken', 400);
+    }
+
+    if (player === null) {
+      // register new user
+      player = await db.createUser(
+        null, appleId, googleId, null, null
+      );
+      // new user created
+      res.status(201)
+    } else {
+      // user already exists
+      res.status(200)
+    }
+    res.json({
+      userId: player._id,
+      name: player.name,
+      socketId: player.socketId,
+      email: player.email,
+      imageUrl: player.imageUrl,
+    });
+  });
+
+router
+  .route('/profile/edit')
+  .put(async function (req, res) {
+    const { userId } = req.body;
+    const { name, email, imageUrl } = req.body;
+    const player = await db.getPlayerById(userId);
+    if (!player) {
+      // user doesn't exist
+      return send_error(res, `User with userId ${userId} does not exist`, 404);
+    }
+
+    const result = await db.editProfile(userId, name, email, imageUrl)
+    if (result) {
+      res.status(200).json({
+        player: result,
+      });
+    } else {
+      send_error(res, "Error editing profile", 500);
+    }
   });
