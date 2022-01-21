@@ -11,6 +11,8 @@ import axios from "axios";
 import * as one_sig from "../one_signal";
 import { OAuth2Client } from 'google-auth-library';
 
+import {checkAuth, issueJwt} from "../middleware/auth";
+
 interface MulterRequest extends Request {
   file: any;
 }
@@ -33,7 +35,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-router.route("/createGame").post(async (req, res) => {
+router.route("/createGame").post(checkAuth, async (req, res) => {
   const appleId: string = req.body.appleId;
   const numPlayers: number = req.body.numPlayers;
   const geofence = {
@@ -86,7 +88,7 @@ async function getGallery(cb) {
   });
 }
 
-router.route("/gallery").get(async (req, res) => {
+router.route("/gallery").get(checkAuth, async (req, res) => {
   getGallery((files) => {
     res.status(200).json(files);
   }).catch((err) => {
@@ -95,15 +97,15 @@ router.route("/gallery").get(async (req, res) => {
 });
 
 router.route("/avatar").get(async (req, res) => {
-  const appleId: string = req.query.appleId as string;
-  db.getAvatar(appleId)
+  const _id: string = req.query.userId as string;
+  db.getAvatar(_id)
     .then((imgUrl: string) => {
       if (imgUrl != null) {
         res.status(200).json({
           avatarUrl: imgUrl,
         });
       } else {
-        send_error(res, `User with appleId ${appleId} does not exist`, 404);
+        send_error(res, `User with userId ${_id} does not exist`, 404);
       }
     })
     .catch((err) => {
@@ -115,7 +117,7 @@ function send_error(res, error, status_code: number) {
   res.status(status_code).json({ error: error });
 }
 
-router.route("/numPlayers").get(async (req, res) => {
+router.route("/numPlayers").get(checkAuth, async (req, res) => {
   try {
     const gameId: string = req.query.gameId as string;
     const numPlayers = await db.getNumPlayers(gameId);
@@ -197,12 +199,16 @@ router
       // user already exists
       res.status(200)
     }
+    const token = await issueJwt(player._id)
     res.json({
-      userId: player._id,
-      name: player.name,
-      socketId: player.socketId,
-      email: player.email,
-      imageUrl: player.imageUrl,
+      token,
+      user: {
+        userId: player._id,
+        name: player.name,
+        socketId: player.socketId,
+        email: player.email,
+        imageUrl: player.imageUrl,
+      }
     });
   });
 
